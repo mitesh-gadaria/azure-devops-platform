@@ -3,3 +3,11 @@
 **/*.pyc
 **/.venv/
 .env
+
+# Terraform
+**/.terraform/
+**/.terraform.lock.hcl
+**/*.tfstate
+**/*.tfstate.*
+crash.log
+crash.*.log
