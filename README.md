@@ -154,3 +154,7 @@ It reflects how DevOps systems are built and operated in real teams.
 Built by **Mitesh Gadaria** as a practical DevOps portfolio project.
 
 
+
+## Runbooks
+
+- [AKS Deployment Failure – Architecture Mismatch](docs/runbook.md)
