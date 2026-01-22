@@ -1,10 +1,9 @@
-name: CD - Deploy to AKS (dev)
+name: CD - Deploy to AKS
 
 on:
   workflow_run:
     workflows: ["CI - Build and Push Image to ACR"]
-    types:
-      - completed
+    types: [completed]
 
 permissions:
   contents: read
@@ -22,17 +21,16 @@ jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    environment: dev
 
     steps:
-      - name: Azure Login (CD Service Principal)
+      - name: Azure Login (reuse CI secrets)
         uses: azure/login@v2
         with:
           creds: >
-            {"clientId":"${{ secrets.AZURE_CD_CLIENT_ID }}",
-             "clientSecret":"${{ secrets.AZURE_CD_CLIENT_SECRET }}",
-             "tenantId":"${{ secrets.AZURE_CD_TENANT_ID }}",
-             "subscriptionId":"${{ secrets.AZURE_CD_SUBSCRIPTION_ID }}"}
+            {"clientId":"${{ secrets.AZURE_CLIENT_ID }}",
+             "clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}",
+             "tenantId":"${{ secrets.AZURE_TENANT_ID }}",
+             "subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}"}
 
       - name: Set AKS context
         uses: azure/aks-set-context@v4
@@ -40,14 +38,14 @@ jobs:
           resource-group: ${{ env.RG_NAME }}
           cluster-name: ${{ env.AKS_NAME }}
 
-      - name: Deploy image built by CI (sha tag)
+      - name: Deploy image from CI
         run: |
           SHORT_SHA="${{ github.event.workflow_run.head_sha }}"
           SHORT_SHA="${SHORT_SHA::7}"
-          NEW_IMAGE="${ACR_LOGIN_SERVER}/${IMAGE_NAME}:sha-${SHORT_SHA}"
+          IMAGE="${ACR_LOGIN_SERVER}/${IMAGE_NAME}:sha-${SHORT_SHA}"
 
-          echo "Deploying image: $NEW_IMAGE"
-          kubectl -n "$NAMESPACE" set image deployment/"$DEPLOYMENT" "$CONTAINER"="$NEW_IMAGE"
+          echo "Deploying $IMAGE"
+          kubectl -n "$NAMESPACE" set image deployment/"$DEPLOYMENT" "$CONTAINER"="$IMAGE"
           kubectl -n "$NAMESPACE" rollout status deployment/"$DEPLOYMENT" --timeout=180s
 
       - name: Show pods
